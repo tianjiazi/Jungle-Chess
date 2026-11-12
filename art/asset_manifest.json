@@ -1,0 +1,116 @@
+[
+  {
+    "file": "red_rat.glb",
+    "triangles": 6408,
+    "vertices": 3260,
+    "bytes": 169700
+  },
+  {
+    "file": "blue_rat.glb",
+    "triangles": 6408,
+    "vertices": 3260,
+    "bytes": 169700
+  },
+  {
+    "file": "red_cat.glb",
+    "triangles": 5522,
+    "vertices": 2818,
+    "bytes": 146692
+  },
+  {
+    "file": "blue_cat.glb",
+    "triangles": 5522,
+    "vertices": 2818,
+    "bytes": 146692
+  },
+  {
+    "file": "red_dog.glb",
+    "triangles": 6224,
+    "vertices": 3166,
+    "bytes": 164860
+  },
+  {
+    "file": "blue_dog.glb",
+    "triangles": 6224,
+    "vertices": 3166,
+    "bytes": 164860
+  },
+  {
+    "file": "red_wolf.glb",
+    "triangles": 5362,
+    "vertices": 2740,
+    "bytes": 142588
+  },
+  {
+    "file": "blue_wolf.glb",
+    "triangles": 5362,
+    "vertices": 2740,
+    "bytes": 142588
+  },
+  {
+    "file": "red_leopard.glb",
+    "triangles": 8464,
+    "vertices": 4330,
+    "bytes": 224336
+  },
+  {
+    "file": "blue_leopard.glb",
+    "triangles": 8464,
+    "vertices": 4330,
+    "bytes": 224336
+  },
+  {
+    "file": "red_tiger.glb",
+    "triangles": 7984,
+    "vertices": 4078,
+    "bytes": 211516
+  },
+  {
+    "file": "blue_tiger.glb",
+    "triangles": 7984,
+    "vertices": 4078,
+    "bytes": 211516
+  },
+  {
+    "file": "red_lion.glb",
+    "triangles": 12624,
+    "vertices": 6412,
+    "bytes": 332552
+  },
+  {
+    "file": "blue_lion.glb",
+    "triangles": 12624,
+    "vertices": 6412,
+    "bytes": 332552
+  },
+  {
+    "file": "red_elephant.glb",
+    "triangles": 5536,
+    "vertices": 2836,
+    "bytes": 147364
+  },
+  {
+    "file": "blue_elephant.glb",
+    "triangles": 5536,
+    "vertices": 2836,
+    "bytes": 147364
+  },
+  {
+    "file": "board.glb",
+    "triangles": 8288,
+    "vertices": 4652,
+    "bytes": 231232
+  },
+  {
+    "file": "forest.glb",
+    "triangles": 9792,
+    "vertices": 5138,
+    "bytes": 262828
+  },
+  {
+    "file": "sky.glb",
+    "triangles": 1280,
+    "vertices": 642,
+    "bytes": 34804
+  }
+]

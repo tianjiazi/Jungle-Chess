@@ -1,0 +1,38 @@
+{
+  "method": "public semantic actions; no physical hand-tracking simulation",
+  "checks": [
+    {
+      "check": "home controls present; board controls moved out; scene launcher absent",
+      "result": "PASS"
+    },
+    {
+      "check": "exclusive difficulty selection",
+      "result": "PASS"
+    },
+    {
+      "check": "Stage move and AI response synchronize to separate window",
+      "result": "PASS"
+    },
+    {
+      "check": "native rules Sheet paginates both pages and dismisses without resetting game",
+      "result": "PASS"
+    },
+    {
+      "check": "native restart confirmation cancellation preserves game",
+      "result": "PASS"
+    },
+    {
+      "check": "board settings actions and back navigation preserve game and difficulty",
+      "result": "PASS"
+    },
+    {
+      "check": "settings system back returns home; three system close/reopen cycles toggle launcher and preserve game",
+      "result": "PASS"
+    },
+    {
+      "check": "confirmed restart resets board and retains difficulty",
+      "result": "PASS"
+    }
+  ],
+  "status": "PASS"
+}

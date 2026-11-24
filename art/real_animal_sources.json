@@ -1,0 +1,74 @@
+{
+  "rat": {
+    "title": "ratSqueak.wav",
+    "author": "Zabuhailo",
+    "page": "https://freesound.org/people/Zabuhailo/sounds/143125/",
+    "url": "https://cdn.freesound.org/previews/143/143125_2580450-hq.mp3",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "provenance": "Uploader records a pet rat, Pro Audio VT-7 microphone, M-Audio Fast Track Ultra 8R ADC."
+  },
+  "cat": {
+    "title": "Meow.ogg",
+    "author": "Dan Crosby (Dcrosby)",
+    "page": "https://commons.wikimedia.org/wiki/File:Meow.ogg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/6/62/Meow.ogg",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "provenance": "Uploader's cat Silas meowing."
+  },
+  "dog": {
+    "title": "Sound-of-dog.ogg",
+    "author": "Kriplozoik",
+    "page": "https://commons.wikimedia.org/wiki/File:Sound-of-dog.ogg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/transcoded/c/ce/Sound-of-dog.ogg/Sound-of-dog.ogg.mp3",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "provenance": "Original uploader's recording of a middle-sized dog barking."
+  },
+  "wolf": {
+    "title": "Wolf howls.ogg",
+    "author": "U.S. Fish and Wildlife Service",
+    "page": "https://commons.wikimedia.org/wiki/File:Wolf_howls.ogg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/8/87/Wolf_howls.ogg",
+    "license": "Public domain (US federal government work)",
+    "license_url": "https://www.fws.gov/disclaimer",
+    "provenance": "Wolf howling recording from the U.S. Fish and Wildlife Service sound collection."
+  },
+  "leopard": {
+    "title": "Leopard's Cough Isolated.wav",
+    "author": "drobiumdesign",
+    "page": "https://freesound.org/people/drobiumdesign/sounds/346402/",
+    "url": "https://cdn.freesound.org/previews/346/346402_5481596-hq.mp3",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "provenance": "Leopard cough recorded with iPhone at 10–20 meters in Pilanesberg, South Africa."
+  },
+  "tiger": {
+    "title": "Tiger roar female",
+    "author": "eZZin",
+    "page": "https://freesound.org/people/eZZin/sounds/811790/",
+    "url": "https://cdn.freesound.org/previews/811/811790_2175308-hq.mp3",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "provenance": "Uploader isolated the roar from their video recording of an angry female tiger."
+  },
+  "lion": {
+    "title": "Lion raring-sound1TamilNadu178.ogg",
+    "author": "தகவலுழவன் (Info-farmer)",
+    "page": "https://commons.wikimedia.org/wiki/File:Lion_raring-sound1TamilNadu178.ogg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/7/7d/Lion_raring-sound1TamilNadu178.ogg",
+    "license": "Public domain (author dedication)",
+    "license_url": "https://commons.wikimedia.org/wiki/File:Lion_raring-sound1TamilNadu178.ogg#Licensing",
+    "provenance": "Author's recording of a male lion roaring in captivity."
+  },
+  "elephant": {
+    "title": "Elephant voice - trumpeting.ogg",
+    "author": "தகவலுழவன் (Info-farmer)",
+    "page": "https://commons.wikimedia.org/wiki/File:Elephant_voice_-_trumpeting.ogg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/40/Elephant_voice_-_trumpeting.ogg",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "provenance": "Author's own recording of an elephant trumpeting."
+  }
+}

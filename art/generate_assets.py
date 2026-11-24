@@ -225,22 +225,54 @@ def board():
         s.box((x,-.025,0),(.009,.02,1.56),GOLD)
     return s
 
-def environment():
+def tree(style, height, width):
+    """Four complementary silhouettes, scaled in metres with all roots on the ground."""
+    s=Sculpture()
+    trunk=height*.56 if style!="pine" else height*.83
+    s.cylinder((0,trunk/2,0),.065+height*.012,trunk,"#986638",12)
+    if style=="pine":
+        for j in range(3):
+            base=height*(.22+j*.19)
+            s.cone((0,base,0),width*(1-j*.24),height*(.52-j*.075),
+                   ["#247E62","#39985E","#6FB96C"][j])
+    elif style=="round":
+        for j,(x,y,z) in enumerate([(-.20,.64,.02),(.22,.74,-.09),(0,.85,.03)]):
+            s.ball((x*width,y*height,z), (width*.75,height*.23,width*.70),
+                   ["#2F9463","#62B55C","#8FCC68"][j],2)
+    elif style=="slender":
+        for j in range(3):
+            s.ball(((j-1)*width*.10,height*(.57+j*.13),0),
+                   (width*(.60-j*.09),height*.26,width*.53),
+                   ["#278564","#53A566","#97C46C"][j],2)
+    else:  # spreading, branching broadleaf canopy
+        for x,z,y in [(-.40,.12,.65),(.36,-.14,.70),(0,.02,.89)]:
+            s.tube([[0,height*.42,0],[x*width,height*y,z*width]],.042,"#986638")
+            s.ball((x*width,height*y,z*width),(width*.64,height*.19,width*.59),
+                   "#80BD69" if y>.8 else "#459D62",2)
+    return s
+
+def environment(seed=19):
     s=Sculpture()
     s.cylinder((0,-.015,0),5,.03,"#279976",64)
     s.ring((0,.009,-1),2.05,.008,"#B2DF73")
     s.ring((0,.007,-1),2.12,.006,"#5BBD88")
-    rng=np.random.default_rng(19)
-    for i in range(20):
-        angle=i/20*math.tau
-        r=3.3+float(rng.random())*.5
+    rng=np.random.default_rng(seed)
+    styles=list(rng.permutation(["pine","round","slender","spreading"]*6))
+    inventory=[]
+    for i,style in enumerate(styles):
+        angle=(i+.15+float(rng.uniform(-.13,.13)))/len(styles)*math.tau
+        r=float(rng.uniform(3.35,3.95))
         x,z=r*math.cos(angle),r*math.sin(angle)-.4
-        h=1.8+float(rng.random())*1.3
-        s.cylinder((x,h*.32,z),.09,h*.64,"#9B6131",12)
-        for j in range(3):
-            s.ball((x+(j-1)*.20,h*.62+j*.23,z),(.6,.65,.56),["#168D61","#25B16E","#70CE5A"][j],1)
+        h=float(rng.uniform(1.65,3.65))
+        width=float(rng.uniform(.43,.69))
+        specimen=tree(style,h,width)
+        for part in specimen.parts: part.apply_translation([x,0,z])
+        s.parts.extend(specimen.parts)
+        inventory.append({"style":str(style),"height":round(h,3),"width":round(width,3),
+                          "x":round(x,3),"z":round(z,3)})
         for j in range(2):
-            s.ball((x+.2*j,.09,z+.3),(.23,.16,.25),"#74C99B",1)
+            s.ball((x+.2*j,.07,z+.3),(.19,.10,.22),"#88B675",1)
+    s.tree_inventory=inventory
     return s
 
 def sky():

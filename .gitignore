@@ -10,3 +10,6 @@ local.properties
 .env*
 __pycache__/
 .art-venv/
+.private/
+.signing/
+*.log

@@ -121,18 +121,20 @@ class JungleRulesTest {
     @Test(expected=IllegalArgumentException::class) fun illegalMoveRejected() {
         Jungle.play(Position.initial(),Move(Square(0,6),Square(3,3)))
     }
-    @Test fun easyAlwaysLegalAndRandom() {
+    @Test fun easyUsesReplySearchAndIsDeterministic() {
         val p = Position.initial()
-        val ai = JungleAI(Random(7))
-        val choices = (1..80).map { ai.choose(p,Difficulty.EASY).move }
-        assertTrue(choices.all { it in Jungle.legalMoves(p) })
-        assertTrue(choices.toSet().size > 10)
+        val ai = JungleAI()
+        val choices = (1..4).map { ai.choose(p,Difficulty.EASY) }
+        assertTrue(choices.all { it.move in Jungle.legalMoves(p) && it.depth == 2 && it.nodes > 24 })
+        assertEquals(1, choices.map { it.move }.toSet().size)
     }
     @Test fun minimaxTakesDenAndDefendsImmediateThreat() {
         val win = pos(b(Animal.RAT,3,7),r(Animal.ELEPHANT,0,6),turn=Side.BLUE)
-        assertEquals(Move(Square(3,7),Square(3,8)),JungleAI().choose(win,Difficulty.HARD,2000).move)
         val defend = pos(r(Animal.RAT,3,1),b(Animal.CAT,2,1),b(Animal.ELEPHANT,6,2),turn=Side.BLUE)
-        assertEquals(Move(Square(2,1),Square(3,1)),JungleAI().choose(defend,Difficulty.HARD,2000).move)
+        for (difficulty in Difficulty.entries) {
+            assertEquals(Move(Square(3,7),Square(3,8)),JungleAI().choose(win,difficulty,0).move)
+            assertEquals(Move(Square(2,1),Square(3,1)),JungleAI().choose(defend,difficulty,0).move)
+        }
     }
     @Test fun randomGamesMaintainInvariants() {
         val random = Random(31)

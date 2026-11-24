@@ -15,6 +15,10 @@ import kotlin.math.*
 class JungleScene(private val vm: GameViewModel) {
     private lateinit var content: SpatialViewContent
     private val roots = mutableListOf<Entity>()
+    private var sky: Entity? = null
+    private var skyMaterials: List<UnlitMaterial> = emptyList()
+    private var skyImmersion = 100
+    private var appliedSkyImmersion = -1
     private val pieces = mutableMapOf<Int,Entity>()
     private val tiles = mutableMapOf<Square,Entity>()
     private val rings = mutableMapOf<Square,Entity>()
@@ -41,6 +45,14 @@ class JungleScene(private val vm: GameViewModel) {
     private var depth = -1.12f
     private data class Motion(val entity: Entity, val from: Vector3, val to: Vector3, var elapsed: Float=0f, val duration: Float=.28f)
     private val motions = mutableMapOf<Int,Motion>()
+    private var celebratedOutcome: Outcome? = null
+    private var celebrationSeconds = 0f
+    private data class Winner(val id: Int, val entity: Entity, val square: Square)
+    private var winners: List<Winner> = emptyList()
+    private lateinit var fireworks: Entity
+    private data class Spark(val head: Entity, val tail: Entity, val direction: Vector3)
+    private data class Burst(val center: Vector3, val sparks: List<Spark>)
+    private val bursts = mutableListOf<Burst>()
 
     private fun position(entity: Entity) = entity.components[TransformComponent::class.java]!!.position
     private fun place(entity: Entity, p: Vector3) { entity.components[TransformComponent::class.java]!!.setPosition(p) }
@@ -68,12 +80,23 @@ class JungleScene(private val vm: GameViewModel) {
             own(panel)
             place(panel,Vector3(0f,1.43f,-1.92f))
         }
-        val sky = Entity.loadSuspend("asset://sky.glb")
-        if (disposed) { sky.destroy(); return }
-        own(sky)
+        val skyRoot = Entity.loadSuspend("asset://sky.glb")
+        if (disposed) { skyRoot.destroy(); return }
+        skyRoot.setName("jungle_sky")
+        sky = own(skyRoot)
+        fun collectSkyMaterials(entity: Entity): List<UnlitMaterial> =
+            entity.components[ModelComponent::class.java]?.materials
+                ?.filterIsInstance<UnlitMaterial>().orEmpty() +
+                entity.getChildren().flatMap { collectSkyMaterials(it) }
+        skyMaterials = collectSkyMaterials(skyRoot).distinct()
+        check(skyMaterials.isNotEmpty()) { "Sky has no adjustable material" }
+        setSkyImmersion(skyImmersion)
         val forest = Entity.loadSuspend("asset://forest.glb")
         if (disposed) { forest.destroy(); return }
         own(forest)
+        val details = Entity.loadSuspend("asset://forest_details.glb")
+        if (disposed) { details.destroy(); return }
+        own(details)
         // Opaque unlit GLBs contain baked soft lighting in linear vertex colours.
         // Avoid per-eye PBR, runtime IBL generation and real-time shadow passes.
         table = own(Entity().apply { setName("jungle_table") })
@@ -111,9 +134,11 @@ class JungleScene(private val vm: GameViewModel) {
             val piece = Piece(side,animal)
             val root = child(table,Entity().apply {
                 setName("piece_${piece.id}")
-                components.set(CollisionComponent(listOf(pieceShape),physics))
-                components.set(InteractableComponent())
-                components.set(HoverEffectComponent())
+                if (side == Side.RED) {
+                    components.set(CollisionComponent(listOf(pieceShape),physics))
+                    components.set(InteractableComponent())
+                    components.set(HoverEffectComponent())
+                }
                 components.set(AccessibilityComponent("${if(side==Side.RED) "红方" else "蓝方"}${animal.label}","等级${animal.rank}")
                     .apply { isAccessibilityElement=true })
             })
@@ -122,7 +147,7 @@ class JungleScene(private val vm: GameViewModel) {
             if (disposed) { model.destroy(); return }
             child(root,model)
             // Both faces remain readable from the player's starting position.
-            content.setAccessibilityActions(root,"piece_${piece.id}") {
+            if (side == Side.RED) content.setAccessibilityActions(root,"piece_${piece.id}") {
                 onClick("选择${animal.label}") {
                     currentSquare(piece.id)?.let { vm.tap(it) } ?: false
                 }
@@ -135,9 +160,26 @@ class JungleScene(private val vm: GameViewModel) {
                 }
             }
         }
+        createFireworks()
         ready=true
         sync(vm.state.value,true)
         Log.i("JungleScene","READY FullSpace=true board=7x9 animals=${pieces.size}")
+    }
+
+    /** Only the independent sky GLB participates in app-driven immersion changes. */
+    fun setSkyImmersion(level: Int) {
+        skyImmersion = level.coerceIn(0, 100)
+        val root = sky ?: return
+        if (disposed || appliedSkyImmersion == skyImmersion) return
+        val opacity = skyImmersion / 100f
+        skyMaterials.forEach {
+            it.setBlendingMode(if (skyImmersion == 100) BlendingMode.OPAQUE else BlendingMode.TRANSPARENT)
+            it.setDepthWrite(skyImmersion == 100)
+            it.setOpacity(opacity)
+        }
+        root.enabled = skyImmersion > 0
+        appliedSkyImmersion = skyImmersion
+        Log.i("JungleSky", "immersion=$skyImmersion skyOpacity=$opacity foreground=unchanged")
     }
 
     fun terrain(s: Square) = when {
@@ -156,7 +198,12 @@ class JungleScene(private val vm: GameViewModel) {
     private fun resolve(entity: Entity?): Entity? {
         var node=entity
         repeat(5) {
-            if (node?.getName()?.startsWith("piece_")==true || node?.getName()?.startsWith("tile_")==true) return node
+            val name = node?.getName()
+            if (name?.startsWith("piece_")==true) {
+                val id = name.removePrefix("piece_").toIntOrNull()
+                return node.takeIf { id != null && id in pieces && state.position.board.any { it?.id == id && it.side == Side.RED } }
+            }
+            if (name?.startsWith("tile_")==true) return node
             node=node?.getParent()
         }
         return null
@@ -190,10 +237,9 @@ class JungleScene(private val vm: GameViewModel) {
         if (!ready || dragId==null) return
         // Convert a delta by subtracting two converted positions: px/left-handed view
         // -> metres/right-handed SpatialView -> rotated table local coordinates.
-        val origin=content.convertPosition(Vector3.ZERO,ViewCoordinateSpace.Local,content.localSpatialCoordinateSpace)
-        val end=content.convertPosition(Vector3(dx,dy,dz),ViewCoordinateSpace.Local,content.localSpatialCoordinateSpace)
-        val ref=content.localSpatialCoordinateSpace.origin
-        val delta=table.convertPositionFrom(end,ref)-table.convertPositionFrom(origin,ref)
+        val origin=content.convertPosition(Vector3.ZERO,ViewCoordinateSpace.Local,table)
+        val end=content.convertPosition(Vector3(dx,dy,dz),ViewCoordinateSpace.Local,table)
+        val delta=end-origin
         val next=dragPosition+delta
         dragPosition=Vector3(next.x.coerceIn(-1.2f,1.2f),next.y.coerceIn(.04f,.65f),next.z.coerceIn(-1.4f,1.4f))
         hover=squareAt(dragPosition)
@@ -213,22 +259,41 @@ class JungleScene(private val vm: GameViewModel) {
     fun sync(s: GameUiState, immediate: Boolean=false) {
         if (!ready || disposed) return
         val boardChanged=state.position!=s.position
+        val restarting=state.position.outcome!=null && s.position.outcome==null
+        val celebrationChanged=celebratedOutcome!=s.position.outcome
         if (dragId!=null && (s.selected==null || s.thinking || boardChanged)) {
             dragId=null; hover=null
         }
         state=s
+        if (celebrationChanged) {
+            celebratedOutcome=s.position.outcome
+            celebrationSeconds=0f
+            fireworks.enabled=false
+            bursts.forEach { burst -> burst.sparks.forEach { it.head.enabled=false; it.tail.enabled=false } }
+            winners=pieces.mapNotNull { (id,entity) ->
+                val square=currentSquare(id)
+                if (square!=null && state.position[square]?.side==celebratedOutcome?.winner)
+                    Winner(id,entity,square) else null
+            }
+            Log.i("JungleCelebration", "winner=${celebratedOutcome?.winner} jumpingPieces=${winners.size} fireworks=${celebratedOutcome?.winner==Side.RED}")
+        }
         for ((id,entity) in pieces) {
             val sq=currentSquare(id)
-            if (!pieceSquares.containsKey(id) || pieceSquares[id]!=sq || immediate) {
+            if (!pieceSquares.containsKey(id) || pieceSquares[id]!=sq || immediate || celebrationChanged) {
                 entity.enabled=sq!=null
                 if (sq!=null) entity.components[AccessibilityComponent::class.java]!!.value=
-                    "${sq.label} · 等级${state.position[sq]!!.animal.rank}"
+                    "${sq.label} · 等级${state.position[sq]!!.animal.rank}" +
+                        if (state.position.outcome?.winner==state.position[sq]?.side) " · 胜方庆祝跳动" else ""
                 pieceSquares[id]=sq
             }
             if (sq==null) { motions.remove(id); continue }
             if (id==dragId) continue
             val to=at(sq)
-            if (immediate) place(entity,to)
+            if (immediate || restarting) {
+                motions.remove(id)
+                place(entity,to)
+            }
+            else if (celebratedOutcome!=null && !celebrationChanged) continue
             else if ((position(entity)-to).length()>.001f && motions[id]?.to!=to)
                 motions[id]=Motion(entity,position(entity),to,duration=if(boardChanged) .34f else .22f)
         }
@@ -280,6 +345,75 @@ class JungleScene(private val vm: GameViewModel) {
             val p=position(root)
             place(root,p+(dragPosition-p)*(1-exp(-28*dt)))
         }
+        if (celebratedOutcome!=null) {
+            celebrationSeconds+=dt
+            val time=celebrationSeconds-VictoryMotion.SETTLE_SECONDS
+            if (time>0f) {
+                for (winner in winners) {
+                    motions.remove(winner.id)
+                    place(winner.entity,at(winner.square)+Vector3(0f,VictoryMotion.jump(winner.id,time),0f))
+                }
+                if (celebratedOutcome?.winner==Side.RED) animateFireworks(time)
+            }
+        }
+    }
+    /** A fixed pool of opaque unlit sparks; no lights, physics, or per-frame spawning. */
+    private fun createFireworks() {
+        fireworks=own(Entity().apply {
+            setName("victory_fireworks")
+            components.set(AccessibilityComponent("胜利烟花","玩家获胜后天空庆祝").apply { isAccessibilityElement=true })
+            enabled=false
+        })
+        val mesh=MeshResource.createSphere(.027f).also { owned+=it }
+        val colors=listOf(Color4(1f,.72f,.18f,1f),Color4(1f,.32f,.65f,1f),Color4(.32f,1f,.84f,1f))
+        val centers=listOf(Vector3(-1.8f,3.6f,-4.8f),Vector3(0f,4.1f,-5.4f),Vector3(1.8f,3.7f,-4.8f))
+        for (group in 0 until VictoryMotion.BURST_GROUPS) {
+            val glow=material(colors[group])
+            val sparks=List(VictoryMotion.SPARKS_PER_BURST) { index ->
+                // Evenly spread directions over a sphere, with no random flicker.
+                val y=1f-2f*(index+.5f)/VictoryMotion.SPARKS_PER_BURST
+                val radius=sqrt(1f-y*y)
+                val angle=index*2.399963f+group*.7f
+                val direction=Vector3(cos(angle)*radius,y,sin(angle)*radius)
+                fun spark(name: String)=child(fireworks,Entity().apply {
+                    setName(name)
+                    components.set(ModelComponent(mesh,glow))
+                    enabled=false
+                })
+                Spark(spark("firework_${group}_${index}"),spark("trail_${group}_${index}"),direction)
+            }
+            bursts+=Burst(centers[group],sparks)
+        }
+    }
+    private fun animateFireworks(time: Float) {
+        val visible=time<VictoryMotion.FIREWORK_SECONDS
+        if (fireworks.enabled!=visible) fireworks.enabled=visible
+        if (!visible) return
+        bursts.forEachIndexed { group,burst ->
+            val age=VictoryMotion.fireworkAge(group,time) ?: return@forEachIndexed
+            burst.sparks.forEachIndexed sparkLoop@ { index,spark ->
+                val launching=age<.6f
+                val active=age<2.45f && (!launching || index==0)
+                if (spark.head.enabled!=active) spark.head.enabled=active
+                val tailActive=active && !launching
+                if (spark.tail.enabled!=tailActive) spark.tail.enabled=tailActive
+                if (!active) return@sparkLoop
+                if (launching) {
+                    place(spark.head,burst.center-Vector3(0f,(1f-age/.6f)*2.2f,0f))
+                    spark.head.components[TransformComponent::class.java]!!.setScaleVector(Vector3(.65f,1.7f,.65f))
+                } else {
+                    val elapsed=age-.6f
+                    fun point(t: Float)=burst.center+spark.direction*(1.35f*(1-exp(-1.1f*t)))-
+                        Vector3(0f,.3f*t*t,0f)
+                    place(spark.head,point(elapsed))
+                    place(spark.tail,point((elapsed-.085f).coerceAtLeast(0f)))
+                    val fade=((1.85f-elapsed)/.6f).coerceIn(0f,1f)
+                    val size=(.85f+.15f*sin(elapsed*19f+index))*fade
+                    spark.head.components[TransformComponent::class.java]!!.setScaleVector(Vector3(size,size,size))
+                    spark.tail.components[TransformComponent::class.java]!!.setScaleVector(Vector3(size*.45f,size*.45f,size*.45f))
+                }
+            }
+        }
     }
     fun rotate(degrees: Float) { if(ready) { endDrag(true); yaw+=degrees; applyTablePose() } }
     fun lift(delta: Float) { if(ready) { endDrag(true); height=(height+delta).coerceIn(.55f,1.10f); applyTablePose() } }
@@ -289,10 +423,13 @@ class JungleScene(private val vm: GameViewModel) {
         table.components[TransformComponent::class.java]!!.setQuaternion(EulerAngles(0f,yaw,0f).toQuat())
     }
     fun close() {
-        disposed=true; ready=false; motions.clear()
+        disposed=true; ready=false; motions.clear(); winners=emptyList(); bursts.clear()
+        celebratedOutcome=null; celebrationSeconds=0f
         roots.reversed().forEach { runCatching { it.destroy() } }
         owned.reversed().forEach { runCatching { it.close() } }
         roots.clear(); owned.clear(); ringStyles.clear(); pieceSquares.clear()
+        sky = null
+        skyMaterials = emptyList()
     }
     companion object { const val CELL=.16f }
 }

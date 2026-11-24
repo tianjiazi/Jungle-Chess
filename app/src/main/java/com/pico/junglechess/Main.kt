@@ -19,7 +19,7 @@ fun mainApp(scope: SpatialAppScope) =
         WindowContainer(
             id = PanelSession.WINDOW_ID,
             form = Form.Planar,
-            defaultSize = WindowContainerSize(640.dp, 480.dp),
+            defaultSize = WindowContainerSize(640.dp, PanelSession.HOME_HEIGHT.dp),
             resizeType = ContainerResizeType.ContentSize,
             enableMaterialBackground = true,
             defaultCaptionBarType = CaptionBarType.Default,

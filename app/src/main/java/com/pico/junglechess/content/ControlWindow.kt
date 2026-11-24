@@ -10,6 +10,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.pico.junglechess.platform.SpatialApplication
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -23,9 +27,17 @@ import com.pico.spatial.ui.design.*
 import com.pico.spatial.ui.design.windows.AlertDialog
 import com.pico.spatial.ui.design.windows.Sheet
 import com.pico.spatial.ui.platform.containers.WindowContainerScope
+import com.pico.spatial.ui.platform.containers.LocalSpatialNavigator
+import kotlin.math.roundToInt
 
 @Composable
 fun WindowContainerScope.ControlWindow(session: PanelSession, modifier: Modifier = Modifier) {
+    val application = LocalContext.current.applicationContext as SpatialApplication
+    val navigator = LocalSpatialNavigator.current
+    val stageVisible by session.stageVisible.collectAsState()
+    LaunchedEffect(stageVisible) {
+        if (!stageVisible) navigator.closeWindowContainer(PanelSession.WINDOW_ID, PanelSession.WINDOW_TAG)
+    }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val windowOwner = remember { Any() }
     DisposableEffect(session, lifecycle) {
@@ -47,36 +59,49 @@ fun WindowContainerScope.ControlWindow(session: PanelSession, modifier: Modifier
     val binding by session.binding.collectAsStateWithLifecycle()
     val game = binding
     if (game == null) {
-        Box(modifier.windowConstraints(640.dp, 480.dp).fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(modifier.windowConstraints(640.dp, PanelSession.HOME_HEIGHT.dp).fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("正在连接林间棋局…", style = PicoTheme.typography.titleLarge)
         }
         return
     }
     val state by game.vm.state.collectAsStateWithLifecycle()
+    val audioSettings by game.audio.settings.collectAsStateWithLifecycle()
     var rules by rememberSaveable { mutableStateOf(false) }
     var rulesPage by rememberSaveable { mutableStateOf(0) }
     var restart by rememberSaveable { mutableStateOf(false) }
     var boardSettings by rememberSaveable { mutableStateOf(false) }
+    var skySettings by rememberSaveable { mutableStateOf(false) }
+    val skyLevel by game.sky.level.collectAsStateWithLifecycle()
+    val outcome = state.position.outcome
+    var resultDismissed by rememberSaveable(outcome) { mutableStateOf(false) }
+    LaunchedEffect(outcome) {
+        if (outcome != null) {
+            rules = false
+            restart = false
+            boardSettings = false
+            skySettings = false
+        }
+    }
     val backDispatcher = (LocalLifecycleOwner.current as? OnBackPressedDispatcherOwner)?.onBackPressedDispatcher
-    DisposableEffect(backDispatcher, boardSettings, rules, restart) {
-        val callback = object : OnBackPressedCallback(boardSettings && !rules && !restart) {
-            override fun handleOnBackPressed() { boardSettings = false }
+    DisposableEffect(backDispatcher, boardSettings, skySettings, rules, restart) {
+        val callback = object : OnBackPressedCallback((boardSettings || skySettings) && !rules && !restart) {
+            override fun handleOnBackPressed() { boardSettings = false; skySettings = false }
         }
         backDispatcher?.addCallback(callback)
         onDispose { callback.remove() }
     }
-    Column(modifier.windowConstraints(640.dp, if (boardSettings) 368.dp else 480.dp).fillMaxSize()) {
+    Column(modifier.windowConstraints(640.dp, if (boardSettings || skySettings) 368.dp else PanelSession.HOME_HEIGHT.dp).fillMaxSize()) {
         TitleBar(
             leadingActions = {
-                if (boardSettings) {
-                    Button(onClick = { boardSettings = false }, size = ButtonDefaults.Min) { Text("关闭") }
+                if (boardSettings || skySettings) {
+                    Button(onClick = { boardSettings = false; skySettings = false }, size = ButtonDefaults.Min) { Text("关闭") }
                 } else {
                     Image(painterResource(R.mipmap.ic_spatial_launcher), contentDescription = "林间斗兽棋图标",
                         modifier = Modifier.size(56.dp).clip(CircleShape)
                             .border(2.dp, PicoTheme.colorScheme.fillTertiary, CircleShape))
                 }
             },
-            title = { Text(if (boardSettings) "棋盘设置" else "林间斗兽棋", style = PicoTheme.typography.headlineLarge) },
+            title = { Text(when { skySettings -> "天空沉浸度"; boardSettings -> "棋盘设置"; else -> "林间斗兽棋" }, style = PicoTheme.typography.headlineLarge) },
         )
         Column(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -88,9 +113,12 @@ fun WindowContainerScope.ControlWindow(session: PanelSession, modifier: Modifier
                 BoardSettings(game.scene)
                 return@Column
             }
-            val outcome = state.position.outcome
+            if (skySettings) {
+                SkyImmersionSettings(skyLevel, game.sky::setLevel)
+                return@Column
+            }
             val status = when {
-                outcome != null -> if (outcome.winner == null) "本局和棋" else if (outcome.winner == Side.RED) "你赢了！" else "AI获胜"
+                outcome != null -> outcome.title
                 state.thinking -> "蓝方思考中…"
                 else -> "红方回合 · 轮到你了"
             }
@@ -129,15 +157,37 @@ fun WindowContainerScope.ControlWindow(session: PanelSession, modifier: Modifier
                         }
                     }
                 }
-                Button(onClick = { game.scene.endDrag(true); boardSettings = true },
-                    modifier = Modifier.fillMaxWidth()) {
-                    Text("棋盘设置")
+                AudioSettingRow("背景音乐", audioSettings.musicEnabled, game.audio::setMusicEnabled)
+                AudioSettingRow("棋子音效", audioSettings.soundEffectsEnabled, game.audio::setSoundEffectsEnabled)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(onClick = { game.scene.endDrag(true); boardSettings = true },
+                        modifier = Modifier.weight(1f)) { Text("棋盘设置") }
+                    Button(onClick = { game.scene.endDrag(true); skySettings = true },
+                        modifier = Modifier.weight(1f)) { Text("天空沉浸度") }
                 }
             }
         }
     }
     // Native modal windows are siblings of the page, with their own system material.
-    if (restart && !game.loading && game.error == null) {
+    if (outcome != null && !resultDismissed && !game.loading && game.error == null) {
+        AlertDialog(
+            onDismissRequest = { resultDismissed = true },
+            title = { Text(outcome.title, style = PicoTheme.typography.headlineLarge) },
+            content = {
+                Text(outcome.reason, style = PicoTheme.typography.bodyLarge)
+            },
+            buttons = {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)) {
+                    Button(onClick = { application.exitGame(session) }) { Text("退出游戏") }
+                    Button(onClick = {
+                        game.scene.endDrag(true)
+                        game.vm.newGame()
+                    }) { Text("新开一局") }
+                }
+            },
+        )
+    }
+    if (restart && (outcome == null || resultDismissed) && !game.loading && game.error == null) {
         AlertDialog(
             onDismissRequest = { restart = false },
             title = { Text("开始新对局？", style = PicoTheme.typography.headlineLarge) },
@@ -150,7 +200,7 @@ fun WindowContainerScope.ControlWindow(session: PanelSession, modifier: Modifier
             },
         )
     }
-    if (rules && !game.loading && game.error == null) {
+    if (rules && (outcome == null || resultDismissed) && !game.loading && game.error == null) {
         Sheet(
             modifier = Modifier.width(640.dp),
             leadingAction = {
@@ -182,6 +232,40 @@ fun WindowContainerScope.ControlWindow(session: PanelSession, modifier: Modifier
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SkyImmersionSettings(level: Int, onLevelChange: (Int) -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        Text("仅改变天空，棋盘、棋子、树和烟花保持显示。", style = PicoTheme.typography.bodyLarge)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("全透 VST", style = PicoTheme.typography.bodyMedium)
+            Text("$level%", style = PicoTheme.typography.titleMedium)
+            Text("全沉浸", style = PicoTheme.typography.bodyMedium)
+        }
+        Slider(
+            value = level / 100f,
+            onValueChange = { onLevelChange((it * 100).roundToInt()) },
+            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "天空沉浸度" },
+            sliderSpec = SliderDefaults.Small,
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Button(onClick = { onLevelChange(0) }, modifier = Modifier.weight(1f)) { Text("全透") }
+            Button(onClick = { onLevelChange(50) }, modifier = Modifier.weight(1f)) { Text("半沉浸") }
+            Button(onClick = { onLevelChange(100) }, modifier = Modifier.weight(1f)) { Text("全沉浸") }
+        }
+    }
+}
+
+@Composable
+private fun AudioSettingRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth().height(48.dp), horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = PicoTheme.typography.bodyLarge)
+        Switch(checked = checked, onCheckedChange = onCheckedChange,
+            modifier = Modifier.semantics { contentDescription = label })
     }
 }
 

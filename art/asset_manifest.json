@@ -103,9 +103,9 @@
   },
   {
     "file": "forest.glb",
-    "triangles": 9792,
-    "vertices": 5138,
-    "bytes": 262828
+    "triangles": 24256,
+    "vertices": 12454,
+    "bytes": 641252
   },
   {
     "file": "sky.glb",

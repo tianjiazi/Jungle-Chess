@@ -32,29 +32,13 @@
             <!-- Stage style at launch
                  "0": StageStyle.Automatic, a system default setting, set to Mixed currently (default)
                  "1": StageStyle.Mixed — displays both virtual content and the real environment at full intensity (100% each)
-                 "2": StageStyle.Progressive — allows adjusting the balance between virtual and real environments (0–100%)
-                    At 0: immersion = 0,full real environment, no virtual content
-                    At 100: immersion = 100,full virtual content, no real environment
+                 "2": StageStyle.Progressive — system immersion also affects foreground models.
                  "3": StageStyle.Full — displays only virtual content (100%)
              -->
             <meta-data
                 android:name="pico.spatial.stage.style"
-                android:value="3" />
-
-            <!-- The immersion of a Progressive Stage at launch, only works when stage style is Progressive, range [0, 100], default value is 50 -->
-            <meta-data
-                android:name="pico.spatial.stage.immersion"
-                android:value="100" />
-
-            <!-- The minimum immersion of a Progressive Stage that the user can adjust to, only works when stage style is Progressive, range [0, 100], default value is 0 -->
-            <meta-data
-                android:name="pico.spatial.stage.immersion_min"
-                android:value="100" />
-
-            <!-- The maximum immersion of a Progressive Stage that the user can adjust to, only works when stage style is Progressive, range [0, 100], default value is 100 -->
-            <meta-data
-                android:name="pico.spatial.stage.immersion_max"
-                android:value="100" />
+                android:value="1" />
+            <!-- SkySettings controls only sky.glb; Mixed keeps all foreground models visible. -->
 
         </activity>
 

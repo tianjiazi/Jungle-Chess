@@ -12,8 +12,8 @@ android {
         applicationId = "com.pico.junglechess"
         minSdk = 35
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.5"
+        versionCode = 16
+        versionName = "1.13"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters.add("arm64-v8a") }
@@ -38,7 +38,7 @@ android {
     buildFeatures {
         compose = true
     }
-    androidResources { noCompress += listOf("glb", "hdr", "ktx", "ktx2") }
+    androidResources { noCompress += listOf("glb", "hdr", "ktx", "ktx2", "wav") }
 }
 
 dependencies {

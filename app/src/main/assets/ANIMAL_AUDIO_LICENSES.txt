@@ -1,0 +1,62 @@
+# 林间斗兽棋 1.11 真实动物录音来源与许可
+
+以下为真实动物录音的节选。改动仅为裁剪、单声道转换、重采样、统一音量与切口淡化。
+无变调、变速、合成或物种替代。Freesound采用公开分享的高品质MP3预览。
+猫与狗的处理后WAV继续以CC BY-SA 3.0发布；豹声以CC BY 3.0发布。
+这些音频资源的许可不用于变更其他代码或资源的许可。原作者不代表认可本游戏。
+
+## rat — ratSqueak.wav
+- 作者：Zabuhailo
+- 原始来源：https://freesound.org/people/Zabuhailo/sounds/143125/
+- 许可：CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+- 原始录音说明：Uploader records a pet rat, Pro Audio VT-7 microphone, M-Audio Fast Track Ultra 8R ADC.
+- 使用范围：7.750–8.170秒；处理后0.420秒。
+
+## cat — Meow.ogg
+- 作者：Dan Crosby (Dcrosby)
+- 原始来源：https://commons.wikimedia.org/wiki/File:Meow.ogg
+- 许可：CC BY-SA 3.0 — https://creativecommons.org/licenses/by-sa/3.0/
+- 原始录音说明：Uploader's cat Silas meowing.
+- 使用范围：0.000–0.779秒；处理后0.779秒。
+
+## dog — Sound-of-dog.ogg
+- 作者：Kriplozoik
+- 原始来源：https://commons.wikimedia.org/wiki/File:Sound-of-dog.ogg
+- 许可：CC BY-SA 3.0 — https://creativecommons.org/licenses/by-sa/3.0/
+- 原始录音说明：Original uploader's recording of a middle-sized dog barking.
+- 使用范围：0.000–0.480秒；处理后0.480秒。
+
+## wolf — Wolf howls.ogg
+- 作者：U.S. Fish and Wildlife Service
+- 原始来源：https://commons.wikimedia.org/wiki/File:Wolf_howls.ogg
+- 许可：Public domain (US federal government work) — https://www.fws.gov/disclaimer
+- 原始录音说明：Wolf howling recording from the U.S. Fish and Wildlife Service sound collection.
+- 使用范围：0.000–1.350秒；处理后1.350秒。
+
+## leopard — Leopard's Cough Isolated.wav
+- 作者：drobiumdesign
+- 原始来源：https://freesound.org/people/drobiumdesign/sounds/346402/
+- 许可：CC BY 3.0 — https://creativecommons.org/licenses/by/3.0/
+- 原始录音说明：Leopard cough recorded with iPhone at 10–20 meters in Pilanesberg, South Africa.
+- 使用范围：0.000–0.448秒；处理后0.448秒。
+
+## tiger — Tiger roar female
+- 作者：eZZin
+- 原始来源：https://freesound.org/people/eZZin/sounds/811790/
+- 许可：CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+- 原始录音说明：Uploader isolated the roar from their video recording of an angry female tiger.
+- 使用范围：0.000–0.899秒；处理后0.899秒。
+
+## lion — Lion raring-sound1TamilNadu178.ogg
+- 作者：தகவலுழவன் (Info-farmer)
+- 原始来源：https://commons.wikimedia.org/wiki/File:Lion_raring-sound1TamilNadu178.ogg
+- 许可：Public domain (author dedication) — https://commons.wikimedia.org/wiki/File:Lion_raring-sound1TamilNadu178.ogg#Licensing
+- 原始录音说明：Author's recording of a male lion roaring in captivity.
+- 使用范围：0.420–1.600秒；处理后1.180秒。
+
+## elephant — Elephant voice - trumpeting.ogg
+- 作者：தகவலுழவன் (Info-farmer)
+- 原始来源：https://commons.wikimedia.org/wiki/File:Elephant_voice_-_trumpeting.ogg
+- 许可：CC0 1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+- 原始录音说明：Author's own recording of an elephant trumpeting.
+- 使用范围：0.000–1.440秒；处理后1.440秒。

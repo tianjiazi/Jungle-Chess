@@ -75,7 +75,7 @@ class EnduranceInstrumentedTest {
         var hardSearches=0; var maxSearchMs=0L
         repeat(60) { seed ->
             var p=Position.initial()
-            val ai=JungleAI(Random(seed+1100))
+            val ai=JungleAI()
             var steps=0
             while(p.outcome==null && steps<600) {
                 val level=if(seed<8 && p.turn==Side.BLUE) Difficulty.HARD else Difficulty.EASY

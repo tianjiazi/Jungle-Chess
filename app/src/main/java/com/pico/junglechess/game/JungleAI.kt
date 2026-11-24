@@ -1,54 +1,59 @@
 package com.pico.junglechess.game
 
-import kotlin.random.Random
-
-enum class Difficulty(val label: String) { EASY("简单"), HARD("困难") }
+/** One layer is one move by either side, not a complete pair of turns. */
+enum class Difficulty(val label: String, val maxDepth: Int) {
+    EASY("简单", 2), HARD("困难", 6)
+}
 data class SearchResult(val move: Move?, val depth: Int, val nodes: Int)
 
 /** Iterative deepening minimax with alpha-beta; run on Dispatchers.Default. */
-class JungleAI(private val random: Random = Random.Default) {
-    private var nodes = 0
-    private var deadline = 0L
-    private var cancel: () -> Boolean = { false }
+class JungleAI {
+    private class SearchContext(val deadline: Long, val cancelled: () -> Boolean) {
+        var nodes = 0
+        var enforceDeadline = false
+        fun check() {
+            if (cancelled() || (enforceDeadline && System.nanoTime() >= deadline)) throw SearchStopped()
+        }
+    }
     private class SearchStopped : RuntimeException()
     private val values = intArrayOf(160, 210, 290, 360, 430, 620, 730, 830)
 
     fun choose(p: Position, difficulty: Difficulty, budgetMs: Long = 1100,
                cancelled: () -> Boolean = { false }): SearchResult {
+        if (cancelled()) return SearchResult(null, 0, 0)
         val moves = Jungle.legalMoves(p)
         if (moves.isEmpty()) return SearchResult(null, 0, 0)
-        if (difficulty == Difficulty.EASY) return SearchResult(moves.random(random), 0, 1)
-        nodes = 0
-        deadline = System.nanoTime() + budgetMs * 1_000_000
-        cancel = cancelled
+        val context = SearchContext(
+            System.nanoTime() + budgetMs.coerceIn(0, 60_000) * 1_000_000, cancelled
+        )
         var best = order(p, moves).first()
         var completed = 0
-        for (depth in 1..6) {
+        for (depth in 1..difficulty.maxDepth) {
             try {
                 var value = -2_000_000
                 var iterationBest = best
                 var alpha = -2_000_000
                 val ordered = listOf(best) + order(p, moves).filter { it != best }
                 for (move in ordered) {
-                    checkTime()
-                    val score = -search(Jungle.advance(p, move), depth - 1, -2_000_000, -alpha)
+                    context.check()
+                    val score = -search(Jungle.advance(p, move), depth - 1, -2_000_000, -alpha, context)
                     if (score > value) { value = score; iterationBest = move }
                     alpha = maxOf(alpha, score)
                 }
                 best = iterationBest
                 completed = depth
                 if (value > 900_000) break
+                // Both levels finish the basic two-layer reply search. The time
+                // budget is a soft limit for deeper iterations, never a random fallback.
+                context.enforceDeadline = completed >= Difficulty.EASY.maxDepth
             } catch (_: SearchStopped) { break }
         }
-        return SearchResult(best, completed, nodes)
+        return SearchResult(if (cancelled()) null else best, completed, context.nodes)
     }
 
-    private fun checkTime() {
-        if (cancel() || System.nanoTime() >= deadline) throw SearchStopped()
-    }
-    private fun search(p: Position, depth: Int, lo: Int, hi: Int): Int {
-        nodes++
-        if (nodes % 64 == 0) checkTime()
+    private fun search(p: Position, depth: Int, lo: Int, hi: Int, context: SearchContext): Int {
+        context.nodes++
+        if (context.nodes % 64 == 0) context.check()
         p.outcome?.let {
             return if (it.winner == null) 0 else if (it.winner == p.turn) 1_000_000 + depth else -1_000_000 - depth
         }
@@ -56,7 +61,7 @@ class JungleAI(private val random: Random = Random.Default) {
         var alpha = lo
         var best = -2_000_000
         for (move in order(p, Jungle.legalMoves(p))) {
-            val score = -search(Jungle.advance(p, move), depth - 1, -hi, -alpha)
+            val score = -search(Jungle.advance(p, move), depth - 1, -hi, -alpha, context)
             best = maxOf(best, score)
             alpha = maxOf(alpha, score)
             if (alpha >= hi) break

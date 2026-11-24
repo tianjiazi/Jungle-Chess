@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.channels.BufferOverflow
 
 data class GameUiState(
     val position: Position = Position.initial(),
@@ -26,6 +29,9 @@ data class GameUiState(
 class GameViewModel : ViewModel() {
     private val mutable = MutableStateFlow(GameUiState())
     val state = mutable.asStateFlow()
+    private val selections = MutableSharedFlow<Animal>(extraBufferCapacity = 8,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    val selectedAnimals = selections.asSharedFlow()
     private var aiJob: Job? = null
     private var generation = 0
 
@@ -38,6 +44,7 @@ class GameViewModel : ViewModel() {
         mutable.value = s.copy(selected = square, message =
             "${piece.animal.label} · 等级${piece.animal.rank} · ${square.label}　" +
                 if (moves.isEmpty()) "当前无法移动" else "${moves.size}个合法落点")
+        selections.tryEmit(piece.animal)
         return true
     }
 
